@@ -1,0 +1,49 @@
+@model HotelReservations.Models.Reserva
+
+@{
+    ViewData["Title"] = "Nueva Reserva";
+}
+
+<h2>Nueva Reserva</h2>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="form-group">
+        <label asp-for="ClienteId" class="control-label">Cliente</label>
+        <select asp-for="ClienteId" class="form-control"
+                asp-items="@(ViewData["ClienteId"] as SelectList)">
+            <option value="">Seleccione un cliente</option>
+        </select>
+        <span asp-validation-for="ClienteId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="HabitacionId" class="control-label">Habitación</label>
+        <select asp-for="HabitacionId" class="form-control"
+                asp-items="@(ViewData["HabitacionId"] as SelectList)">
+            <option value="">Seleccione una habitación</option>
+        </select>
+        <span asp-validation-for="HabitacionId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="FechaEntrada" class="control-label">Fecha Entrada</label>
+        <input asp-for="FechaEntrada" type="date" class="form-control" />
+        <span asp-validation-for="FechaEntrada" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="FechaSalida" class="control-label">Fecha Salida</label>
+        <input asp-for="FechaSalida" type="date" class="form-control" />
+        <span asp-validation-for="FechaSalida" class="text-danger"></span>
+    </div>
+
+    <br />
+    <button type="submit" class="btn btn-success">Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

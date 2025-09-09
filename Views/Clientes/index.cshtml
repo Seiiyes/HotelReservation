@@ -1,0 +1,50 @@
+@model IEnumerable<Cliente>
+
+@{
+    ViewData[index: "Title"] = "Lista de Clientes";
+}
+
+<h2 class="mb-3">Clientes</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">➕ Nuevo Cliente</a>
+</p>
+
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Documento</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    @if (Model != null && Model.Any())
+    {
+        foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Nombre</td>
+                <td>@item.Apellido</td>
+                <td>@item.DocumentoIdentidad</td>
+                <td>@item.Email</td>
+                <td>@item.Telefono</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.ClienteId" class="btn btn-sm btn-warning">Editar</a>
+                    <a asp-action="Details" asp-route-id="@item.ClienteId" class="btn btn-sm btn-info">Detalles</a>
+                    <a asp-action="Delete" asp-route-id="@item.ClienteId" class="btn btn-sm btn-danger">Eliminar</a>
+                </td>
+            </tr>
+        }
+    }
+    else
+    {
+        <tr>
+            <td colspan="6" class="text-center text-muted">No hay clientes registrados.</td>
+        </tr>
+    }
+    </tbody>
+</table>
