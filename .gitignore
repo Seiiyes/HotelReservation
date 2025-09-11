@@ -22,3 +22,5 @@ packages/
 
 # Configs locales
 appsettings.Development.json
+
+.fake

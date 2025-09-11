@@ -1,15 +1,13 @@
-CREATE DATABASE  IF NOT EXISTS `hoteldb` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
-USE `hoteldb`;
--- MySQL dump 10.13  Distrib 8.0.43, for Win64 (x86_64)
+-- MariaDB dump 10.19  Distrib 10.4.32-MariaDB, for Win64 (AMD64)
 --
--- Host: 127.0.0.1    Database: hoteldb
+-- Host: localhost    Database: hoteldb
 -- ------------------------------------------------------
--- Server version	5.5.5-10.4.32-MariaDB
+-- Server version	10.4.32-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -23,7 +21,7 @@ USE `hoteldb`;
 
 DROP TABLE IF EXISTS `__efmigrationshistory`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `__efmigrationshistory` (
   `MigrationId` varchar(150) NOT NULL,
   `ProductVersion` varchar(32) NOT NULL,
@@ -37,7 +35,7 @@ CREATE TABLE `__efmigrationshistory` (
 
 LOCK TABLES `__efmigrationshistory` WRITE;
 /*!40000 ALTER TABLE `__efmigrationshistory` DISABLE KEYS */;
-INSERT INTO `__efmigrationshistory` VALUES ('20250909115435_Inicial','9.0.8');
+INSERT INTO `__efmigrationshistory` VALUES ('20250911022452_Inicial','9.0.9');
 /*!40000 ALTER TABLE `__efmigrationshistory` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -47,7 +45,7 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `clientes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `clientes` (
   `ClienteId` int(11) NOT NULL AUTO_INCREMENT,
   `DocumentoIdentidad` varchar(20) NOT NULL,
@@ -56,7 +54,7 @@ CREATE TABLE `clientes` (
   `Email` varchar(100) NOT NULL,
   `Telefono` varchar(20) NOT NULL,
   PRIMARY KEY (`ClienteId`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -65,7 +63,6 @@ CREATE TABLE `clientes` (
 
 LOCK TABLES `clientes` WRITE;
 /*!40000 ALTER TABLE `clientes` DISABLE KEYS */;
-INSERT INTO `clientes` VALUES (1,'1234567489','bna','hola','12356489@gmail.com','31054687156');
 /*!40000 ALTER TABLE `clientes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -75,15 +72,15 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `habitaciones`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `habitaciones` (
   `HabitacionId` int(11) NOT NULL AUTO_INCREMENT,
   `Tipo` longtext NOT NULL,
   `Capacidad` int(11) NOT NULL,
-  `Precio` decimal(65,30) NOT NULL,
+  `Precio` decimal(18,2) NOT NULL,
   `Disponible` tinyint(1) NOT NULL,
   PRIMARY KEY (`HabitacionId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -92,6 +89,7 @@ CREATE TABLE `habitaciones` (
 
 LOCK TABLES `habitaciones` WRITE;
 /*!40000 ALTER TABLE `habitaciones` DISABLE KEYS */;
+INSERT INTO `habitaciones` VALUES (1,'doble',2,20000.00,1),(2,'simple',1,15000.01,1),(6,'doble',2,50000.00,1),(7,'doble',2,80000.00,1),(8,'doble',2,100000.00,1),(9,'doble',1,100000.00,0);
 /*!40000 ALTER TABLE `habitaciones` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -101,7 +99,7 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `pagos`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `pagos` (
   `PagoId` int(11) NOT NULL AUTO_INCREMENT,
   `ReservaId` int(11) NOT NULL,
@@ -129,7 +127,7 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `reservas`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `reservas` (
   `ReservaId` int(11) NOT NULL AUTO_INCREMENT,
   `ClienteId` int(11) NOT NULL,
@@ -159,7 +157,7 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `serviciosadicionales`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+/*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `serviciosadicionales` (
   `ServicioId` int(11) NOT NULL AUTO_INCREMENT,
   `Nombre` longtext NOT NULL,
@@ -189,4 +187,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-09-09  8:16:16
+-- Dump completed on 2025-09-10 22:41:59

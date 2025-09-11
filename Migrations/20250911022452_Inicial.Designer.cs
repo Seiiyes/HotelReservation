@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HotelReservations.Migrations
 {
     [DbContext(typeof(HotelDbContext))]
-    [Migration("20250909115435_Inicial")]
+    [Migration("20250911022452_Inicial")]
     partial class Inicial
     {
         /// <inheritdoc />
@@ -19,7 +19,7 @@ namespace HotelReservations.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.8")
+                .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);

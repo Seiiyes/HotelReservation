@@ -1,0 +1,76 @@
+@model IEnumerable<HotelReservations.Models.Habitacion>
+
+@{
+    ViewData["Title"] = "Habitaciones";
+}
+
+<h2>Habitaciones</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Nueva Habitación</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Tipo</th>
+            <th>Capacidad</th>
+            <th>Precio</th>
+            <th>Disponible</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.Tipo</td>
+            <td>@item.Capacidad</td>
+            <td>@item.Precio.ToString("C")</td>
+            <td>@(item.Disponible ? " Sí" : " No")</td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.HabitacionId" class="btn btn-warning btn-sm">Editar</a>
+                <a asp-action="Details" asp-route-id="@item.HabitacionId" class="btn btn-info btn-sm"> Ver</a>
+
+                <!-- Formulario que envía la solicitud POST a la acción "Delete" -->
+                <form asp-action="Delete" asp-route-id="@item.HabitacionId" method="post" class="d-inline" id="deleteForm-@item.HabitacionId">
+                    <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Se ejecuta cuando el DOM está completamente cargado
+        document.addEventListener('DOMContentLoaded', function () {
+            // Seleccionamos todos los formularios cuyo ID comience con "deleteForm-"
+            document.querySelectorAll('form[id^="deleteForm-"]').forEach(form => {
+                form.addEventListener('submit', function (event) {
+                    // Prevenimos el envío inmediato del formulario para mostrar la alerta
+                    event.preventDefault();
+
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "Esta acción no se puede deshacer.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, ¡eliminar!',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        // Si el usuario hace clic en "Sí, ¡eliminar!"
+                        if (result.isConfirmed) {
+                            // Se procede a enviar el formulario que originó el evento
+                            this.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}
