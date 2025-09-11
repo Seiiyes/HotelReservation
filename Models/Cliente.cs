@@ -22,6 +22,6 @@ public class Cliente
     [MaxLength(20)]
     public string Telefono { get; set; } = string.Empty;
 
-    // Navegación
+
     public ICollection<Reserva> Reservas { get; set; } = new List<Reserva>();
 }

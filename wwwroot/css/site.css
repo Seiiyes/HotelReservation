@@ -8,6 +8,63 @@ html {
   }
 }
 
+/* Estilos para validación */
+.field-validation-error {
+    color: #dc3545;
+    font-size: 0.875rem;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.input-validation-error {
+    border-color: #dc3545;
+}
+
+.input-validation-error:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Estilos para campos requeridos */
+.form-label.fw-bold:after {
+    content: " *";
+    color: #dc3545;
+}
+
+/* Mejoras visuales */
+.form-select, .form-control {
+    height: calc(1.5em + 1rem + 2px);
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Mejoras para formularios */
+.container.mt-4 {
+    max-width: 960px;
+    margin: 2rem auto;
+}
+
+.btn-primary {
+    padding: 0.5rem 1.5rem;
+    font-weight: 500;
+}
+
+.btn-secondary {
+    padding: 0.5rem 1.5rem;
+    margin-left: 0.5rem;
+}
+
+.alert {
+    display: none;  /* Ocultar alertas por defecto */
+}
+
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }

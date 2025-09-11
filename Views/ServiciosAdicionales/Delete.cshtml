@@ -1,0 +1,44 @@
+@model HotelReservations.Models.ServicioAdicional
+
+@{
+    ViewData["Title"] = "Eliminar Servicio Adicional";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="alert alert-warning">
+    <h3>¿Está seguro de que desea eliminar este servicio adicional?</h3>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">@Html.DisplayFor(model => model.Nombre)</h5>
+        <dl class="row">
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Precio)</dt>
+            <dd class="col-sm-9">$@Html.DisplayFor(model => model.Precio)</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Descripcion)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.Descripcion)</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FechaSolicitud)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.FechaSolicitud)</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.EstadoPago)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.EstadoPago)</dd>
+
+            <dt class="col-sm-3">Reserva</dt>
+            <dd class="col-sm-9">
+                @if (Model.Reserva != null)
+                {
+                    <span>Reserva #@Model.ReservaId</span>
+                }
+            </dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete">
+    <input type="hidden" asp-for="ServicioAdicionalId" />
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a asp-action="Index" class="btn btn-secondary">Volver a la lista</a>
+</form>

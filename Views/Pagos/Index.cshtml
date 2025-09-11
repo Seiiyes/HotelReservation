@@ -1,0 +1,114 @@
+@model IEnumerable<HotelReservations.Models.Pago>
+
+@{
+    ViewData["Title"] = "Pagos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h2">@ViewData["Title"]</h1>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Registrar Nuevo Pago
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.FechaPago)</th>
+                <th>@Html.DisplayNameFor(model => model.Monto)</th>
+                <th>@Html.DisplayNameFor(model => model.MetodoPago)</th>
+                <th>Cliente</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.FechaPago.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@item.Monto.ToString("C0")</td>
+                    <td>
+                        <span class="badge bg-@(item.MetodoPago switch {
+                            "Efectivo" => "success",
+                            "Tarjeta de Crédito" => "primary",
+                            "Tarjeta de Débito" => "info",
+                            "Transferencia" => "warning",
+                            _ => "secondary"
+                        })">
+                            @item.MetodoPago
+                        </span>
+                    </td>
+                    <td>
+                        @if (item.Reserva?.Cliente != null)
+                        {
+                            <span>@item.Reserva.Cliente.Nombre @item.Reserva.Cliente.Apellido</span>
+                            <br/>
+                            <small class="text-muted">
+                                Reserva #@item.Reserva.ReservaId
+                                @if (item.Reserva.Habitacion != null)
+                                {
+                                    <span> - @item.Reserva.Habitacion.Tipo</span>
+                                }
+                            </small>
+                        }
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a asp-action="Details" asp-route-id="@item.PagoId" class="btn btn-sm btn-info">
+                                <i class="bi bi-info-circle"></i> Detalles
+                            </a>
+                            <button onclick="confirmarEliminar(@item.PagoId)" class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmarEliminar(id) {
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: "Esta acción también marcará como pendientes los servicios adicionales asociados",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/Pagos/Delete/${id}`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            Swal.fire(
+                                '¡Eliminado!',
+                                'El pago ha sido eliminado.',
+                                'success'
+                            ).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire(
+                                'Error',
+                                'Ha ocurrido un error al eliminar el pago.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}
+
+@Html.AntiForgeryToken()

@@ -1,0 +1,103 @@
+@model IEnumerable<HotelReservations.Models.ServicioAdicional>
+
+@{
+    ViewData["Title"] = "Servicios Adicionales";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Crear Nuevo Servicio</a>
+</p>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@Html.AntiForgeryToken()
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.Nombre)</th>
+                <th>@Html.DisplayNameFor(model => model.Precio)</th>
+                <th>@Html.DisplayNameFor(model => model.Descripcion)</th>
+                <th>@Html.DisplayNameFor(model => model.FechaSolicitud)</th>
+                <th>@Html.DisplayNameFor(model => model.EstadoPago)</th>
+                <th>Reserva</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.Nombre)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Precio)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Descripcion)</td>
+                    <td>@Html.DisplayFor(modelItem => item.FechaSolicitud)</td>
+                    <td>@Html.DisplayFor(modelItem => item.EstadoPago)</td>
+                    <td>
+                        @if (item.Reserva != null)
+                        {
+                            <span>Reserva #@item.ReservaId</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a asp-action="Edit" asp-route-id="@item.ServicioAdicionalId" class="btn btn-sm btn-primary">Editar</a>
+                            <button onclick="confirmarEliminar(@item.ServicioAdicionalId)" class="btn btn-sm btn-danger">Eliminar</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+    </tbody>
+</table>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmarEliminar(id) {
+            Swal.fire({
+                title: '¿Está seguro?',
+                text: "No podrá revertir esta acción",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/ServiciosAdicionales/Delete/${id}`, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            Swal.fire(
+                                '¡Eliminado!',
+                                'El servicio adicional ha sido eliminado.',
+                                'success'
+                            ).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire(
+                                'Error',
+                                'Ha ocurrido un error al eliminar el servicio.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

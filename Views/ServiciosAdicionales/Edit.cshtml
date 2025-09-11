@@ -1,0 +1,68 @@
+@model HotelReservations.Models.ServicioAdicional
+
+@{
+    ViewData["Title"] = "Editar Servicio Adicional";
+    var reserva = ViewData["Reserva"] as Reserva;
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Edit" class="needs-validation" novalidate>
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <input type="hidden" asp-for="ServicioAdicionalId" />
+            <input type="hidden" asp-for="ReservaId" />
+
+            @if (reserva != null)
+            {
+                <div class="alert alert-info">
+                    <h5>Detalles de la Reserva:</h5>
+                    <p>Cliente: @reserva.Cliente.Nombre @reserva.Cliente.Apellido</p>
+                    <p>Habitación: @reserva.Habitacion.Tipo</p>
+                    <p>Fecha: @reserva.FechaEntrada.ToShortDateString() - @reserva.FechaSalida.ToShortDateString()</p>
+                </div>
+            }
+
+            <div class="form-group mb-3">
+                <label asp-for="Nombre" class="control-label"></label>
+                <input asp-for="Nombre" class="form-control" required />
+                <span asp-validation-for="Nombre" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Precio" class="control-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input asp-for="Precio" class="form-control" type="number" step="0.01" min="0" required />
+                </div>
+                <span asp-validation-for="Precio" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Descripcion" class="control-label"></label>
+                <textarea asp-for="Descripcion" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Descripcion" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="EstadoPago" class="control-label"></label>
+                <select asp-for="EstadoPago" class="form-select">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Pagado">Pagado</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+                <span asp-validation-for="EstadoPago" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <input type="submit" value="Guardar" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Volver a la lista</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

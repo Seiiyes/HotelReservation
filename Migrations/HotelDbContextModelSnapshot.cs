@@ -74,11 +74,12 @@ namespace HotelReservations.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<decimal>("Precio")
-                        .HasColumnType("decimal(65,30)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Tipo")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.HasKey("HabitacionId");
 
@@ -98,10 +99,11 @@ namespace HotelReservations.Migrations
 
                     b.Property<string>("MetodoPago")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<decimal>("Monto")
-                        .HasColumnType("decimal(65,30)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ReservaId")
                         .HasColumnType("int");
@@ -144,23 +146,36 @@ namespace HotelReservations.Migrations
 
             modelBuilder.Entity("HotelReservations.Models.ServicioAdicional", b =>
                 {
-                    b.Property<int>("ServicioId")
+                    b.Property<int>("ServicioAdicionalId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ServicioId"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ServicioAdicionalId"));
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("EstadoPago")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("FechaSolicitud")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<decimal>("Precio")
-                        .HasColumnType("decimal(65,30)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ReservaId")
                         .HasColumnType("int");
 
-                    b.HasKey("ServicioId");
+                    b.HasKey("ServicioAdicionalId");
 
                     b.HasIndex("ReservaId");
 

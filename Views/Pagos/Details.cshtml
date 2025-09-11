@@ -1,0 +1,91 @@
+@model HotelReservations.Models.Pago
+
+@{
+    ViewData["Title"] = "Detalles del Pago";
+    var serviciosAdicionales = ViewData["ServiciosAdicionales"] as IEnumerable<ServicioAdicional>;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h2">@ViewData["Title"]</h1>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a la lista
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-cash-coin"></i> Información del Pago
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">@Html.DisplayNameFor(model => model.FechaPago)</dt>
+                    <dd class="col-sm-8">@Html.DisplayFor(model => model.FechaPago)</dd>
+
+                    <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Monto)</dt>
+                    <dd class="col-sm-8">@Html.DisplayFor(model => model.Monto)</dd>
+
+                    <dt class="col-sm-4">@Html.DisplayNameFor(model => model.MetodoPago)</dt>
+                    <dd class="col-sm-8">@Html.DisplayFor(model => model.MetodoPago)</dd>
+                </dl>
+            </div>
+        </div>
+
+        @if (Model.Reserva != null)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Detalles de la Reserva</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">Cliente</dt>
+                        <dd class="col-sm-8">@Model.Reserva.Cliente?.Nombre @Model.Reserva.Cliente?.Apellido</dd>
+
+                        <dt class="col-sm-4">Habitación</dt>
+                        <dd class="col-sm-8">@Model.Reserva.Habitacion?.Tipo</dd>
+
+                        <dt class="col-sm-4">Fecha de Entrada</dt>
+                        <dd class="col-sm-8">@Model.Reserva.FechaEntrada.ToShortDateString()</dd>
+
+                        <dt class="col-sm-4">Fecha de Salida</dt>
+                        <dd class="col-sm-8">@Model.Reserva.FechaSalida.ToShortDateString()</dd>
+
+                        <dt class="col-sm-4">Precio de Habitación</dt>
+                        <dd class="col-sm-8">@(Model.Reserva.Habitacion?.Precio.ToString("C0"))</dd>
+                    </dl>
+                </div>
+            </div>
+        }
+
+        @if (serviciosAdicionales != null && serviciosAdicionales.Any())
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Servicios Adicionales</h5>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Servicio</th>
+                                <th>Precio</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var servicio in serviciosAdicionales)
+                            {
+                                <tr>
+                                    <td>@servicio.Nombre</td>
+                                    <td>@servicio.Precio.ToString("C0")</td>
+                                    <td>@servicio.EstadoPago</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
