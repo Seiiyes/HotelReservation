@@ -164,84 +164,70 @@ namespace HotelReservations.Controllers
         {
             if (ModelState.IsValid)
             {
-                try
+                var reserva = await _context.Reservas
+                    .Include(r => r.Habitacion)
+                    .Include(r => r.Cliente)
+                    .FirstOrDefaultAsync(r => r.ReservaId == pago.ReservaId);
+
+                if (reserva == null || reserva.Habitacion == null)
                 {
-                    // Validar que la reserva exista y cargar datos necesarios
-                    var reserva = await _context.Reservas
-                        .Include(r => r.Habitacion)
-                        .Include(r => r.Cliente)
-                        .FirstOrDefaultAsync(r => r.ReservaId == pago.ReservaId);
-
-                    if (reserva == null || reserva.Habitacion == null)
-                    {
-                        ModelState.AddModelError("", "No se encontró la reserva o la habitación.");
-                        return View(pago);
-                    }
-
-                    // Validar que no haya pagos duplicados
+                    ModelState.AddModelError("", "No se encontró la reserva o la habitación.");
+                }
+                else
+                {
                     var existePago = await _context.Pagos.AnyAsync(p => p.ReservaId == pago.ReservaId);
                     if (existePago)
                     {
                         ModelState.AddModelError("", "Ya existe un pago registrado para esta reserva.");
-                        return View(pago);
                     }
-
-                    // Calcular montos
-                    var totalServicios = await _context.ServiciosAdicionales
-                        .Where(s => s.ReservaId == pago.ReservaId)
-                        .SumAsync(s => s.Precio);
-
-                    var totalReserva = reserva.Habitacion.Precio + totalServicios;
-                    var pagosPrevios = await _context.Pagos
-                        .Where(p => p.ReservaId == pago.ReservaId)
-                        .SumAsync(p => p.Monto);
-                    var montoPendiente = totalReserva - pagosPrevios;
-
-                    // Validaciones de monto
-                    if (pago.Monto <= 0)
+                    else
                     {
-                        ModelState.AddModelError("Monto", "El monto debe ser mayor que cero.");
-                        return View(pago);
-                    }
+                        var totalServicios = await _context.ServiciosAdicionales
+                            .Where(s => s.ReservaId == pago.ReservaId)
+                            .SumAsync(s => s.Precio);
 
-                    if (pago.Monto > montoPendiente)
-                    {
-                        ModelState.AddModelError("Monto", 
-                            $"El monto ingresado (${pago.Monto:N0}) excede el monto pendiente (${montoPendiente:N0}).");
-                        return View(pago);
-                    }
+                        var totalReserva = reserva.Habitacion.Precio + totalServicios;
+                        var pagosPrevios = await _context.Pagos
+                            .Where(p => p.ReservaId == pago.ReservaId)
+                            .SumAsync(p => p.Monto);
+                        var montoPendiente = totalReserva - pagosPrevios;
 
-                    // Iniciar transacción
+                        if (pago.Monto <= 0)
+                        {
+                            ModelState.AddModelError("Monto", "El monto debe ser mayor que cero.");
+                        }
+                        else if (pago.Monto > montoPendiente)
+                        {
+                            ModelState.AddModelError("Monto",
+                                $"El monto ingresado (${pago.Monto:N0}) excede el monto pendiente (${montoPendiente:N0}).");
+                        }
+                    }
+                }
+
+                if (ModelState.IsValid)
+                {
                     using var transaction = await _context.Database.BeginTransactionAsync();
                     try
                     {
-                        // Preparar y guardar el pago
                         pago.FechaPago = DateTime.Now;
-                        pago.Reserva = reserva;
+                        pago.Reserva = reserva!;
                         _context.Add(pago);
-                        await _context.SaveChangesAsync();
 
-                        // Registrar el pago en servicios adicionales pendientes
                         var serviciosAdicionales = await _context.ServiciosAdicionales
                             .Where(s => s.ReservaId == pago.ReservaId && s.EstadoPago == "Pendiente")
                             .ToListAsync();
 
-                        if (serviciosAdicionales.Any())
+                        foreach (var servicio in serviciosAdicionales)
                         {
-                            foreach (var servicio in serviciosAdicionales)
-                            {
-                                servicio.EstadoPago = "Pagado";
-                                _context.Update(servicio);
-                            }
-                            await _context.SaveChangesAsync();
+                            servicio.EstadoPago = "Pagado";
                         }
-
-                        // Confirmar transacción
+                        
+                        await _context.SaveChangesAsync();
                         await transaction.CommitAsync();
-                        
-                        _logger.LogInformation("Pago {PagoId} registrado correctamente para la reserva {ReservaId}", 
+
+                        _logger.LogInformation("Pago {PagoId} registrado para la reserva {ReservaId}",
                             pago.PagoId, pago.ReservaId);
-                        
+
                         TempData["Success"] = $"Pago por ${pago.Monto:N0} registrado correctamente.";
                         return RedirectToAction(nameof(Index));
                     }
@@ -250,17 +236,7 @@ namespace HotelReservations.Controllers
                         await transaction.RollbackAsync();
                         _logger.LogError(ex, "Error al procesar el pago para la reserva {ReservaId}", pago.ReservaId);
                         ModelState.AddModelError("", "Ha ocurrido un error al procesar el pago. Por favor, inténtelo nuevamente.");
-                        throw;
                     }
-
-                    _logger.LogInformation("Pago creado: {PagoId}", pago.PagoId);
-                    TempData["Success"] = "Pago registrado correctamente.";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error al crear pago");
-                    ModelState.AddModelError("", "Ha ocurrido un error al registrar el pago.");
                 }
             }
 

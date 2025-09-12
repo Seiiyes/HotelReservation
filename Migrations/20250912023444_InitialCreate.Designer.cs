@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HotelReservations.Migrations
 {
     [DbContext(typeof(HotelDbContext))]
-    [Migration("20250911153348_UpdateServiciosAdicionalesPrecioRango")]
-    partial class UpdateServiciosAdicionalesPrecioRango
+    [Migration("20250912023444_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -106,7 +106,7 @@ namespace HotelReservations.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<decimal>("Monto")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,0)");
 
                     b.Property<int>("ReservaId")
                         .HasColumnType("int");

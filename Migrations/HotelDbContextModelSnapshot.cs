@@ -103,7 +103,7 @@ namespace HotelReservations.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<decimal>("Monto")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,0)");
 
                     b.Property<int>("ReservaId")
                         .HasColumnType("int");

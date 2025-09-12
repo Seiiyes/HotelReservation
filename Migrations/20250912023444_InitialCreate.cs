@@ -93,7 +93,7 @@ namespace HotelReservations.Migrations
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     ReservaId = table.Column<int>(type: "int", nullable: false),
                     FechaPago = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    Monto = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Monto = table.Column<decimal>(type: "decimal(18,0)", nullable: false),
                     MetodoPago = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },

@@ -14,7 +14,7 @@ namespace HotelReservations.Models
 
     [Required(ErrorMessage = "La reserva es requerida")]
     public int ReservaId { get; set; }
-    public required virtual Reserva Reserva { get; set; }
+    public virtual Reserva? Reserva { get; set; }
 
     [Required(ErrorMessage = "La fecha de pago es requerida")]
     [Display(Name = "Fecha de pago")]
@@ -30,6 +30,6 @@ namespace HotelReservations.Models
     [Required(ErrorMessage = "El método de pago es requerido")]
     [Display(Name = "Método de pago")]
     [StringLength(50)]
-    public required string MetodoPago { get; set; }
+    public string MetodoPago { get; set; } = string.Empty;
     }
 }

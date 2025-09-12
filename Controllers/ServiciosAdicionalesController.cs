@@ -67,6 +67,7 @@ namespace HotelReservations.Controllers
             {
                 try
                 {
+                    servicioAdicional.EstadoPago = "Pendiente";
                     _context.Add(servicioAdicional);
                     await _context.SaveChangesAsync();
                     _logger.LogInformation("Servicio adicional creado: {ServicioId}", servicioAdicional.ServicioAdicionalId);
