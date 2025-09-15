@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HotelReservations.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HotelReservations.Controllers
 {
+    [Authorize]
     public class ServiciosAdicionalesController : Controller
     {
         private readonly HotelDbContext _context;
@@ -45,15 +47,7 @@ namespace HotelReservations.Controllers
                 });
             }
 
-            ViewData["Reservas"] = await _context.Reservas
-                .Include(r => r.Cliente)
-                .Include(r => r.Habitacion)
-                .Select(r => new
-                {
-                    r.ReservaId,
-                    Descripcion = $"Reserva #{r.ReservaId} - {r.Cliente.Nombre} {r.Cliente.Apellido} - {r.Habitacion.Tipo}"
-                })
-                .ToListAsync();
+            await CargarReservasAsync();
 
             return View();
         }
@@ -81,15 +75,7 @@ namespace HotelReservations.Controllers
                 }
             }
 
-            ViewData["Reservas"] = await _context.Reservas
-                .Include(r => r.Cliente)
-                .Include(r => r.Habitacion)
-                .Select(r => new
-                {
-                    r.ReservaId,
-                    Descripcion = $"Reserva #{r.ReservaId} - {r.Cliente.Nombre} {r.Cliente.Apellido} - {r.Habitacion.Tipo}"
-                })
-                .ToListAsync();
+            await CargarReservasAsync();
 
             return View(servicioAdicional);
         }
@@ -103,10 +89,8 @@ namespace HotelReservations.Controllers
             }
 
             var servicioAdicional = await _context.ServiciosAdicionales
-                .Include(s => s.Reserva)
-                .ThenInclude(r => r.Cliente)
-                .Include(s => s.Reserva)
-                .ThenInclude(r => r.Habitacion)
+                .Include("Reserva.Cliente")
+                .Include("Reserva.Habitacion")
                 .FirstOrDefaultAsync(s => s.ServicioAdicionalId == id);
 
             if (servicioAdicional == null)
@@ -114,18 +98,7 @@ namespace HotelReservations.Controllers
                 return NotFound();
             }
 
-            if (servicioAdicional.Reserva == null)
-            {
-                var reserva = await _context.Reservas
-                    .Include(r => r.Cliente)
-                    .Include(r => r.Habitacion)
-                    .FirstOrDefaultAsync(r => r.ReservaId == servicioAdicional.ReservaId);
-                ViewData["Reserva"] = reserva;
-            }
-            else
-            {
-                ViewData["Reserva"] = servicioAdicional.Reserva;
-            }
+            ViewData["Reserva"] = servicioAdicional.Reserva;
             return View(servicioAdicional);
         }
 
@@ -162,12 +135,7 @@ namespace HotelReservations.Controllers
                 }
             }
 
-            var reserva = await _context.Reservas
-                .Include(r => r.Cliente)
-                .Include(r => r.Habitacion)
-                .FirstOrDefaultAsync(r => r.ReservaId == servicioAdicional.ReservaId);
-
-            ViewData["Reserva"] = reserva;
+            await CargarReservasAsync();
             return View(servicioAdicional);
         }
 
@@ -232,5 +200,21 @@ namespace HotelReservations.Controllers
         {
             return _context.ServiciosAdicionales.Any(e => e.ServicioAdicionalId == id);
         }
+
+        #region Private Helpers
+        private async Task CargarReservasAsync()
+        {
+            ViewData["Reservas"] = await _context.Reservas
+                .Include(r => r.Cliente)
+                .Include(r => r.Habitacion)
+                .Where(r => r.Cliente != null && r.Habitacion != null)
+                .Select(r => new
+                {
+                    r.ReservaId,
+                    Descripcion = $"Reserva #{r.ReservaId} - {r.Cliente!.Nombre} {r.Cliente.Apellido} - {r.Habitacion!.Tipo}"
+                })
+                .ToListAsync();
+        }
+        #endregion
     }
 }

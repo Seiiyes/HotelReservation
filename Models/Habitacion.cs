@@ -13,7 +13,7 @@ namespace HotelReservations.Models
 
         [Required(ErrorMessage = "El tipo de habitación es obligatorio")]
         [StringLength(50)]
-        public required string Tipo { get; set; }
+        public string Tipo { get; set; } = string.Empty;
 
         [Required]
         [Range(1, 20, ErrorMessage = "La capacidad debe ser entre 1 y 20")]

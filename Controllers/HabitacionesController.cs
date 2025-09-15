@@ -1,4 +1,5 @@
 using HotelReservations.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -6,13 +7,16 @@ using System.Threading.Tasks;
 
 namespace HotelReservations.Controllers
 {
+    [Authorize]
     public class HabitacionesController : Controller
     {
         private readonly HotelDbContext _context;
+        private readonly ILogger<HabitacionesController> _logger;
 
-        public HabitacionesController(HotelDbContext context)
+        public HabitacionesController(HotelDbContext context, ILogger<HabitacionesController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         // GET: Habitaciones
@@ -43,16 +47,26 @@ namespace HotelReservations.Controllers
         // POST: Habitaciones/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("HabitacionId,Tipo,Capacidad,Precio,Disponible")] Habitacion habitacion)
-
+        public async Task<IActionResult> Create([Bind("Tipo,Capacidad,Precio,Disponible")] Habitacion habitacion)
         {
-          if (ModelState.IsValid)
-             {
-              _context.Habitaciones.Add(habitacion);
-              await _context.SaveChangesAsync();
-                 return RedirectToAction(nameof(Index));
-             }
-         return View(habitacion);
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Add(habitacion);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Habitación creada correctamente con ID {Id}", habitacion.HabitacionId);
+                    TempData["Success"] = "Habitación creada correctamente.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateException ex)
+                {
+                    _logger.LogError(ex, "Error al guardar la Habitación");
+                    ModelState.AddModelError(string.Empty,
+                        "Error al guardar en la base de datos: " + (ex.InnerException?.Message ?? ex.Message));
+                }
+            }
+            return View(habitacion);
         }
 
         // GET: Habitaciones/Edit/5
@@ -79,15 +93,22 @@ namespace HotelReservations.Controllers
                 {
                     _context.Update(habitacion);
                     await _context.SaveChangesAsync();
+                    TempData["Success"] = "Habitación actualizada correctamente.";
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (DbUpdateConcurrencyException ex)
                 {
+                    _logger.LogWarning(ex, "Error de concurrencia al editar la habitación {HabitacionId}", id);
                     if (!_context.Habitaciones.Any(e => e.HabitacionId == habitacion.HabitacionId))
                         return NotFound();
                     else
                         throw;
                 }
-                return RedirectToAction(nameof(Index));
+                catch (DbUpdateException ex)
+                {
+                    _logger.LogError(ex, "Error al actualizar la Habitación {HabitacionId}", id);
+                    ModelState.AddModelError(string.Empty, "Error al actualizar en la base de datos.");
+                }
             }
             return View(habitacion);
         }
@@ -111,10 +132,23 @@ namespace HotelReservations.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var habitacion = await _context.Habitaciones.FindAsync(id);
-            if (habitacion != null)
+            if (habitacion == null)
+            {
+                TempData["Error"] = "La habitación no fue encontrada.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
             {
                 _context.Habitaciones.Remove(habitacion);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Habitación eliminada correctamente.";
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la habitación con ID {HabitacionId}.", id);
+                TempData["Error"] = "No se pudo eliminar la habitación. Es posible que tenga reservas asociadas.";
+                return RedirectToAction(nameof(Delete), new { id = id });
             }
             return RedirectToAction(nameof(Index));
         }

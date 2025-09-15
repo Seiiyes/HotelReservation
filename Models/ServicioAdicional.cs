@@ -16,7 +16,7 @@ namespace HotelReservations.Models
         [Required(ErrorMessage = "El nombre es requerido")]
         [StringLength(100, ErrorMessage = "El nombre no puede exceder los 100 caracteres")]
         [Display(Name = "Nombre del servicio")]
-        public required string Nombre { get; set; }
+        public string Nombre { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El precio es requerido")]
         [Range(5000, 500000, ErrorMessage = "El precio debe estar entre 5.000 y 500.000 COP")]
@@ -33,10 +33,10 @@ namespace HotelReservations.Models
         [DataType(DataType.DateTime)]
         public DateTime FechaSolicitud { get; set; } = DateTime.Now;
 
+        [Required(ErrorMessage = "El estado del pago es requerido")]
         [Display(Name = "Estado del pago")]
         [StringLength(20)]
-        [Required(ErrorMessage = "El estado del pago es requerido")]
-        public required string EstadoPago { get; set; } = "Pendiente";
+        public string EstadoPago { get; set; } = "Pendiente";
 
         [Required(ErrorMessage = "La reserva es requerida")]
         public int ReservaId { get; set; }

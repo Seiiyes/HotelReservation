@@ -3,20 +3,11 @@
 @{
     ViewData["Title"] = "Registrar Pago";
     var reserva = ViewData["Reserva"] as Reserva;
-    var reservas = ViewData["Reservas"] as IEnumerable<dynamic>;
+    var reservas = ViewData["Reservas"] as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h2 mb-0">@ViewData["Title"]</h1>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
-                <li class="breadcrumb-item"><a asp-action="Index">Pagos</a></li>
-                <li class="breadcrumb-item active">Registrar</li>
-            </ol>
-        </nav>
-    </div>
+    <h1 class="h2 mb-0">@ViewData["Title"]</h1>
     <a asp-action="Index" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Volver a la lista
     </a>
@@ -119,31 +110,19 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
-        // Validación del formulario
-        document.querySelector('form').addEventListener('submit', function(e) {
+        document.querySelector('form.needs-validation').addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            const reservaSelect = document.getElementById('ReservaId');
-            const reservaId = reservaSelect ? reservaSelect.value : '@(reserva?.ReservaId ?? 0)';
+            const form = this;
+
+            // Usar la validación de HTML5/Bootstrap
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
             const monto = document.getElementById('Monto').value;
             const metodoPago = document.getElementById('MetodoPago').value;
 
-            if (!reservaId || reservaId === "0") {
-                Swal.fire('Error', 'Por favor seleccione una reserva', 'error');
-                return;
-            }
-
-            if (!monto || monto <= 0) {
-                Swal.fire('Error', 'Por favor ingrese un monto válido', 'error');
-                return;
-            }
-
-            if (!metodoPago) {
-                Swal.fire('Error', 'Por favor seleccione un método de pago', 'error');
-                return;
-            }
-
-            // Si todo está bien, mostrar confirmación
             Swal.fire({
                 title: '¿Confirmar pago?',
                 html: `
@@ -161,7 +140,7 @@
                     // Deshabilitar el botón para evitar doble envío
                     document.getElementById('btnSubmit').disabled = true;
                     // Enviar el formulario
-                    this.submit();
+                    form.submit();
                 }
             });
         });

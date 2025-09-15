@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using HotelReservations.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HotelReservations.Controllers
 {
+    [Authorize]
     public class PagosController : Controller
     {
         private readonly HotelDbContext _context;
@@ -34,20 +37,7 @@ namespace HotelReservations.Controllers
                 return NotFound();
             }
 
-            // Obtener servicios adicionales de la reserva
-            var serviciosAdicionales = await _context.ServiciosAdicionales
-                .Where(s => s.ReservaId == id)
-                .ToListAsync();
-
-            var totalServicios = serviciosAdicionales.Sum(s => s.Precio);
-            var totalReserva = reserva.Habitacion.Precio + totalServicios;
-            
-            // Calcular el total ya pagado
-            var pagosPrevios = await _context.Pagos
-                .Where(p => p.ReservaId == id)
-                .SumAsync(p => p.Monto);
-            
-            var montoPendiente = totalReserva - pagosPrevios;
+            var (totalReserva, pagosPrevios, montoPendiente, serviciosAdicionales) = await CalcularMontosReservaAsync(id.Value);
 
             return Json(new
             {
@@ -59,7 +49,7 @@ namespace HotelReservations.Controllers
                     nombre = s.Nombre,
                     precio = s.Precio.ToString("C0")
                 }),
-                totalServicios = totalServicios.ToString("C0"),
+                totalServicios = serviciosAdicionales.Sum(s => s.Precio).ToString("C0"),
                 totalReserva = totalReserva.ToString("C0"),
                 pagosPrevios = pagosPrevios.ToString("C0"),
                 montoPendiente = montoPendiente.ToString("C0"),
@@ -81,14 +71,6 @@ namespace HotelReservations.Controllers
         {
             if (reservaId.HasValue)
             {
-                // Verificar si la reserva ya tiene un pago
-                var existePago = await _context.Pagos.AnyAsync(p => p.ReservaId == reservaId);
-                if (existePago)
-                {
-                    TempData["Error"] = "Esta reserva ya tiene un pago registrado.";
-                    return RedirectToAction(nameof(Index));
-                }
-
                 var reserva = await _context.Reservas
                     .Include(r => r.Cliente)
                     .Include(r => r.Habitacion)
@@ -105,20 +87,8 @@ namespace HotelReservations.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                var (totalReserva, pagosPrevios, montoPendiente, _) = await CalcularMontosReservaAsync(reservaId.Value);
                 ViewData["Reserva"] = reserva;
-                // Calcular el monto total y pendiente
-                var totalServicios = await _context.ServiciosAdicionales
-                    .Where(s => s.ReservaId == reservaId)
-                    .SumAsync(s => s.Precio);
-                
-                var totalReserva = reserva.Habitacion.Precio + totalServicios;
-                
-                // Calcular pagos previos
-                var pagosPrevios = await _context.Pagos
-                    .Where(p => p.ReservaId == reservaId)
-                    .SumAsync(p => p.Monto);
-                
-                var montoPendiente = totalReserva - pagosPrevios;
 
                 if (montoPendiente <= 0)
                 {
@@ -141,19 +111,8 @@ namespace HotelReservations.Controllers
                 return View(pago);
             }
 
-            var reservasSinPago = await _context.Reservas
-                .Include(r => r.Cliente)
-                .Include(r => r.Habitacion)
-                .Where(r => !_context.Pagos.Any(p => p.ReservaId == r.ReservaId)) // Solo reservas sin pago
-                .Where(r => r.Cliente != null && r.Habitacion != null) // Asegurarse de que tenga cliente y habitación
-                .ToListAsync();
-
-            ViewData["Reservas"] = reservasSinPago.Select(r => new
-                {
-                    r.ReservaId,
-                    Descripcion = $"Reserva #{r.ReservaId} - {r.Cliente!.Nombre} {r.Cliente.Apellido} - {r.Habitacion!.Tipo}"
-                });
-
+            // Si no se especifica reserva, cargar el dropdown
+            await CargarReservasPendientesAsync();
             return View();
         }
 
@@ -175,23 +134,7 @@ namespace HotelReservations.Controllers
                 }
                 else
                 {
-                    var existePago = await _context.Pagos.AnyAsync(p => p.ReservaId == pago.ReservaId);
-                    if (existePago)
-                    {
-                        ModelState.AddModelError("", "Ya existe un pago registrado para esta reserva.");
-                    }
-                    else
-                    {
-                        var totalServicios = await _context.ServiciosAdicionales
-                            .Where(s => s.ReservaId == pago.ReservaId)
-                            .SumAsync(s => s.Precio);
-
-                        var totalReserva = reserva.Habitacion.Precio + totalServicios;
-                        var pagosPrevios = await _context.Pagos
-                            .Where(p => p.ReservaId == pago.ReservaId)
-                            .SumAsync(p => p.Monto);
-                        var montoPendiente = totalReserva - pagosPrevios;
-
+                        var (_, _, montoPendiente, _) = await CalcularMontosReservaAsync(pago.ReservaId);
                         if (pago.Monto <= 0)
                         {
                             ModelState.AddModelError("Monto", "El monto debe ser mayor que cero.");
@@ -201,7 +144,6 @@ namespace HotelReservations.Controllers
                             ModelState.AddModelError("Monto",
                                 $"El monto ingresado (${pago.Monto:N0}) excede el monto pendiente (${montoPendiente:N0}).");
                         }
-                    }
                 }
 
                 if (ModelState.IsValid)
@@ -240,19 +182,7 @@ namespace HotelReservations.Controllers
                 }
             }
 
-            var reservasSinPago = await _context.Reservas
-                .Include(r => r.Cliente)
-                .Include(r => r.Habitacion)
-                .Where(r => !_context.Pagos.Any(p => p.ReservaId == r.ReservaId))
-                .Where(r => r.Cliente != null && r.Habitacion != null)
-                .ToListAsync();
-
-            ViewData["Reservas"] = reservasSinPago.Select(r => new
-                {
-                    r.ReservaId,
-                    Descripcion = $"Reserva #{r.ReservaId} - {r.Cliente!.Nombre} {r.Cliente.Apellido} - {r.Habitacion!.Tipo}"
-                });
-
+            await CargarReservasPendientesAsync();
             return View(pago);
         }
 
@@ -265,10 +195,8 @@ namespace HotelReservations.Controllers
             }
 
             var pago = await _context.Pagos
-                .Include(p => p.Reserva)
-                .ThenInclude(r => r.Cliente)
-                .Include(p => p.Reserva)
-                .ThenInclude(r => r.Habitacion)
+                .Include("Reserva.Cliente")
+                .Include("Reserva.Habitacion")
                 .FirstOrDefaultAsync(m => m.PagoId == id);
 
             if (pago == null)
@@ -364,5 +292,48 @@ namespace HotelReservations.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
+
+        #region Private Helpers
+
+        private async Task<(decimal totalReserva, decimal pagosPrevios, decimal montoPendiente, List<ServicioAdicional> servicios)> CalcularMontosReservaAsync(int reservaId)
+        {
+            var reserva = await _context.Reservas
+                .Include(r => r.Habitacion)
+                .Include(r => r.Servicios)
+                .Include(r => r.Pagos)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.ReservaId == reservaId);
+
+            if (reserva == null)
+            {
+                return (0, 0, 0, new List<ServicioAdicional>());
+            }
+
+            var totalServicios = reserva.Servicios.Sum(s => s.Precio);
+            var totalReserva = (reserva.Habitacion?.Precio ?? 0) + totalServicios;
+            var pagosPrevios = reserva.Pagos.Sum(p => p.Monto);
+            var montoPendiente = totalReserva - pagosPrevios;
+
+            return (totalReserva, pagosPrevios, montoPendiente, reserva.Servicios.ToList());
+        }
+
+        private async Task CargarReservasPendientesAsync()
+        {
+            var reservasSinPago = await _context.Reservas
+                .Include(r => r.Cliente)
+                .Include(r => r.Habitacion)
+                .Where(r => r.Cliente != null && r.Habitacion != null)
+                .OrderBy(r => r.ReservaId)
+                .ToListAsync();
+
+            var items = reservasSinPago.Select(r => new
+            {
+                r.ReservaId,
+                Descripcion = $"Reserva #{r.ReservaId} - {r.Cliente!.Nombre} {r.Cliente.Apellido} - {r.Habitacion!.Tipo}"
+            });
+
+            ViewData["Reservas"] = new SelectList(items, "ReservaId", "Descripcion");
+        }
+        #endregion
     }
 }

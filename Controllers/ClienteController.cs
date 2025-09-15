@@ -1,9 +1,11 @@
 using HotelReservations.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HotelReservations.Controllers
 {
+    [Authorize]
     public class ClientesController : Controller
     {
         private readonly HotelDbContext _context;
@@ -56,6 +58,7 @@ namespace HotelReservations.Controllers
                 _context.Add(cliente);
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Cliente creado correctamente con ID {Id}", cliente.ClienteId);
+                TempData["Success"] = "Cliente creado correctamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch (DbUpdateException ex)
@@ -94,6 +97,7 @@ namespace HotelReservations.Controllers
             {
                 _context.Update(cliente);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Cliente actualizado correctamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch (DbUpdateConcurrencyException)
@@ -134,23 +138,25 @@ namespace HotelReservations.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            var cliente = await _context.Clientes.FindAsync(id);
+            if (cliente == null)
+            {
+                TempData["Error"] = "El cliente no fue encontrado.";
+                return RedirectToAction(nameof(Index));
+            }
+
             try
             {
-                var cliente = await _context.Clientes.FindAsync(id);
-                if (cliente != null)
-                {
-                    _context.Clientes.Remove(cliente);
-                    await _context.SaveChangesAsync();
-                }
+                _context.Clientes.Remove(cliente);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Cliente eliminado correctamente.";
             }
             catch (DbUpdateException ex)
             {
-                _logger.LogError(ex, "Error al eliminar Cliente");
-                ModelState.AddModelError(string.Empty,
-                    "No se pudo eliminar el cliente, puede tener reservas asociadas.");
-                return RedirectToAction(nameof(Delete), new { id });
+                _logger.LogError(ex, "Error al eliminar el cliente con ID {ClienteId}", id);
+                TempData["Error"] = "No se pudo eliminar el cliente. Es posible que tenga reservas asociadas.";
+                return RedirectToAction(nameof(Delete), new { id = id });
             }
-
             return RedirectToAction(nameof(Index));
         }
     }

@@ -1,4 +1,5 @@
 using HotelReservations.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace HotelReservations.Controllers
 {
+    [Authorize]
     public class ReservasController : Controller
     {
         private readonly HotelDbContext _context;
@@ -66,59 +68,13 @@ namespace HotelReservations.Controllers
                     return View(reserva);
                 }
 
-                // Validaciones de fechas
-                var today = DateTime.Today;
-                if (reserva.FechaEntrada.Date < today)
+                // Validaciones centralizadas
+                if (!await ValidarReservaAsync(reserva))
                 {
-                    _logger.LogWarning("Intento de crear reserva con fecha pasada: {FechaEntrada}", reserva.FechaEntrada);
-                    ModelState.AddModelError("FechaEntrada", "La fecha de entrada no puede ser anterior a hoy.");
                     await CargarListasDesplegablesAsync(reserva.ClienteId, reserva.HabitacionId);
                     return View(reserva);
                 }
-
-                if (reserva.FechaSalida.Date <= reserva.FechaEntrada.Date)
-                {
-                    _logger.LogWarning("Fecha de salida inválida: {FechaSalida} <= {FechaEntrada}", 
-                        reserva.FechaSalida, reserva.FechaEntrada);
-                    ModelState.AddModelError("FechaSalida", "La fecha de salida debe ser posterior a la fecha de entrada.");
-                    await CargarListasDesplegablesAsync(reserva.ClienteId, reserva.HabitacionId);
-                    return View(reserva);
-                }
-
-                // Verificaciones de existencia
-                var cliente = await _context.Clientes.FindAsync(reserva.ClienteId);
-                if (cliente == null)
-                {
-                    _logger.LogWarning("Cliente no encontrado: {ClienteId}", reserva.ClienteId);
-                    ModelState.AddModelError("ClienteId", "El cliente seleccionado no existe.");
-                    await CargarListasDesplegablesAsync(reserva.ClienteId, reserva.HabitacionId);
-                    return View(reserva);
-                }
-
-                var habitacion = await _context.Habitaciones.FindAsync(reserva.HabitacionId);
-                if (habitacion == null)
-                {
-                    _logger.LogWarning("Habitación no encontrada: {HabitacionId}", reserva.HabitacionId);
-                    ModelState.AddModelError("HabitacionId", "La habitación seleccionada no existe.");
-                    await CargarListasDesplegablesAsync(reserva.ClienteId, reserva.HabitacionId);
-                    return View(reserva);
-                }
-
-                // Verificar disponibilidad
-                var reservaExistente = await _context.Reservas
-                    .AnyAsync(r =>
-                        r.HabitacionId == reserva.HabitacionId && 
-                        r.FechaEntrada.Date < reserva.FechaSalida.Date && 
-                        r.FechaSalida.Date > reserva.FechaEntrada.Date);
-
-                if (reservaExistente)
-                {
-                    _logger.LogWarning("Conflicto de reserva para habitación {HabitacionId}", reserva.HabitacionId);
-                    ModelState.AddModelError("", "La habitación ya está reservada para las fechas seleccionadas.");
-                    await CargarListasDesplegablesAsync(reserva.ClienteId, reserva.HabitacionId);
-                    return View(reserva);
-                }
-
+                
                 // Crear la reserva
                 try
                 {
@@ -170,41 +126,34 @@ namespace HotelReservations.Controllers
         {
             if (id != reserva.ReservaId) return NotFound();
 
+            // Validaciones centralizadas
+            if (!await ValidarReservaAsync(reserva))
+            {
+                // No es necesario hacer nada aquí, el error ya está en ModelState
+            }
+            
             if (ModelState.IsValid)
             {
-                if (reserva.FechaSalida <= reserva.FechaEntrada)
+                try
                 {
-                    ModelState.AddModelError("FechaSalida", "La fecha de salida debe ser posterior a la fecha de entrada.");
-                }
-
-                // --- LÓGICA CORREGIDA ---
-                // Comprueba si hay conflictos en la MISMA habitación, pero ignorando la reserva actual.
-                var reservaExistente = await _context.Reservas
-                    .AnyAsync(r =>
-                        r.ReservaId != reserva.ReservaId &&        // Otra reserva
-                        r.HabitacionId == reserva.HabitacionId && // En la misma habitación
-                        r.FechaEntrada < reserva.FechaSalida &&   // Y las fechas se solapan
-                        r.FechaSalida > reserva.FechaEntrada
-                    );
-
-                if (reservaExistente)
-                {
-                    ModelState.AddModelError(string.Empty, "El cambio de fechas entra en conflicto con otra reserva existente para esta habitación.");
-                }
-
-                if (ModelState.IsValid)
-                {
-                    try
-                    {
-                        _context.Update(reserva);
-                        await _context.SaveChangesAsync();
-                    }
-                    catch (DbUpdateConcurrencyException)
-                    {
-                        if (!_context.Reservas.Any(e => e.ReservaId == reserva.ReservaId)) return NotFound();
-                        else throw;
-                    }
+                    _context.Update(reserva);
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = "Reserva actualizada correctamente.";
                     return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    _logger.LogWarning(ex, "Error de concurrencia al editar la reserva {ReservaId}", id);
+                    if (!_context.Reservas.Any(e => e.ReservaId == reserva.ReservaId))
+                    {
+                        return NotFound();
+                    }
+                    ModelState.AddModelError(string.Empty, "La reserva fue modificada por otro usuario. Por favor, recargue la página e intente de nuevo.");
+                }
+                catch (DbUpdateException ex)
+                {
+                    _logger.LogError(ex, "Error al actualizar la reserva {ReservaId}", id);
+                    ModelState.AddModelError(string.Empty, "Ocurrió un error al guardar los cambios en la base de datos.");
                 }
             }
             
@@ -230,16 +179,28 @@ namespace HotelReservations.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var reserva = await _context.Reservas.FindAsync(id);
-            if (reserva != null)
+            if (reserva == null)
+            {
+                TempData["Error"] = "La reserva no fue encontrada.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
             {
                 _context.Reservas.Remove(reserva);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Reserva eliminada correctamente.";
+                return RedirectToAction(nameof(Index));
             }
-            return RedirectToAction(nameof(Index));
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la reserva con ID {ReservaId}", id);
+                TempData["Error"] = "No se pudo eliminar la reserva. Es posible que tenga pagos o servicios adicionales asociados.";
+                return RedirectToAction(nameof(Delete), new { id = id });
+            }
         }
         #endregion
 
-       
         private async Task CargarListasDesplegablesAsync(int? selectedCliente = null, int? selectedHabitacion = null)
         {
             try
@@ -283,6 +244,57 @@ namespace HotelReservations.Controllers
                 _logger.LogError(ex, "Error al cargar las listas desplegables");
                 throw; // Re-lanzamos la excepción para que sea manejada por el action method
             }
+        }
+
+        private async Task<bool> ValidarReservaAsync(Reserva reserva)
+        {
+            // 1. Validaciones de fechas
+            if (reserva.FechaEntrada.Date < DateTime.Today && reserva.ReservaId == 0) // Solo para nuevas reservas
+            {
+                _logger.LogWarning("Intento de crear reserva con fecha pasada: {FechaEntrada}", reserva.FechaEntrada);
+                ModelState.AddModelError("FechaEntrada", "La fecha de entrada no puede ser anterior a hoy.");
+            }
+
+            if (reserva.FechaSalida.Date <= reserva.FechaEntrada.Date)
+            {
+                _logger.LogWarning("Fecha de salida inválida: {FechaSalida} <= {FechaEntrada}", reserva.FechaSalida, reserva.FechaEntrada);
+                ModelState.AddModelError("FechaSalida", "La fecha de salida debe ser posterior a la fecha de entrada.");
+            }
+
+            // 2. Verificaciones de existencia (solo si el modelo es válido hasta ahora)
+            if (ModelState.IsValid)
+            {
+                if (!await _context.Clientes.AnyAsync(c => c.ClienteId == reserva.ClienteId))
+                {
+                    _logger.LogWarning("Cliente no encontrado: {ClienteId}", reserva.ClienteId);
+                    ModelState.AddModelError("ClienteId", "El cliente seleccionado no existe.");
+                }
+
+                if (!await _context.Habitaciones.AnyAsync(h => h.HabitacionId == reserva.HabitacionId))
+                {
+                    _logger.LogWarning("Habitación no encontrada: {HabitacionId}", reserva.HabitacionId);
+                    ModelState.AddModelError("HabitacionId", "La habitación seleccionada no existe.");
+                }
+            }
+
+            // 3. Verificar disponibilidad (solo si el modelo sigue siendo válido)
+            if (ModelState.IsValid)
+            {
+                var reservaExistente = await _context.Reservas
+                    .AnyAsync(r =>
+                        r.ReservaId != reserva.ReservaId && // Excluir la reserva actual en caso de edición
+                        r.HabitacionId == reserva.HabitacionId &&
+                        r.FechaEntrada.Date < reserva.FechaSalida.Date &&
+                        r.FechaSalida.Date > reserva.FechaEntrada.Date);
+
+                if (reservaExistente)
+                {
+                    _logger.LogWarning("Conflicto de reserva para habitación {HabitacionId}", reserva.HabitacionId);
+                    ModelState.AddModelError("", "La habitación ya está reservada para las fechas seleccionadas.");
+                }
+            }
+
+            return ModelState.IsValid;
         }
     }
 }

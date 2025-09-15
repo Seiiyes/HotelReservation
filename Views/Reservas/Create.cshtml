@@ -2,143 +2,90 @@
 
 @{
     ViewData["Title"] = "Nueva Reserva";
+    
 }
 
-<div class="container mt-4">
-    <h2 class="mb-4">Nueva Reserva</h2>
 
-    <form asp-controller="Reservas" asp-action="Create" method="post" id="reservaForm">
-        @Html.AntiForgeryToken()
-        
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-        }
+<h2 class="mb-3">@ViewData["Title"]</h2>
+<form asp-controller="Reservas" asp-action="Create" method="post" id="reservaForm" class="needs-validation" novalidate>
+    @Html.AntiForgeryToken()
+    
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+    }
 
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="ClienteId" class="form-label fw-bold">Cliente *</label>
-                <select asp-for="ClienteId" class="form-select" required
-                        asp-items="@(ViewData["ClienteId"] as SelectList)">
-                    <option value="">Seleccione un cliente</option>
-                </select>
-                <span asp-validation-for="ClienteId" class="text-danger"></span>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label asp-for="HabitacionId" class="form-label fw-bold">Habitación *</label>
-                <select asp-for="HabitacionId" class="form-select" required
-                        asp-items="@(ViewData["HabitacionId"] as SelectList)">
-                    <option value="">Seleccione una habitación</option>
-                </select>
-                <span asp-validation-for="HabitacionId" class="text-danger"></span>
-            </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label asp-for="ClienteId" class="form-label fw-bold">Cliente *</label>
+            <select asp-for="ClienteId" class="form-select" required
+                    asp-items="@(ViewData["ClienteId"] as SelectList)">
+                <option value="">Seleccione un cliente</option>
+            </select>
+            <span asp-validation-for="ClienteId" class="text-danger"></span>
         </div>
 
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="FechaEntrada" class="form-label fw-bold">Fecha de Entrada *</label>
-                <input asp-for="FechaEntrada" type="date" class="form-control" required 
-                       min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
-                <span asp-validation-for="FechaEntrada" class="text-danger"></span>
-            </div>
+        <div class="col-md-6 mb-3">
+            <label asp-for="HabitacionId" class="form-label fw-bold">Habitación *</label>
+            <select asp-for="HabitacionId" class="form-select" required
+                    asp-items="@(ViewData["HabitacionId"] as SelectList)">
+                <option value="">Seleccione una habitación</option>
+            </select>
+            <span asp-validation-for="HabitacionId" class="text-danger"></span>
+        </div>
+    </div>
 
-            <div class="col-md-6 mb-3">
-                <label asp-for="FechaSalida" class="form-label fw-bold">Fecha de Salida *</label>
-                <input asp-for="FechaSalida" type="date" class="form-control" required 
-                       min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" 
-                       value="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
-                <span asp-validation-for="FechaSalida" class="text-danger"></span>
-            </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label asp-for="FechaEntrada" class="form-label fw-bold">Fecha de Entrada *</label>
+            <input asp-for="FechaEntrada" type="date" class="form-control" required 
+                   min="@DateTime.Today.ToString("yyyy-MM-dd")" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+            <span asp-validation-for="FechaEntrada" class="text-danger"></span>
         </div>
 
-        <div class="row mt-4">
-            <div class="col">
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="bi bi-save"></i> Guardar Reserva
-                </button>
-                <a asp-action="Index" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver al Listado
-                </a>
-            </div>
+        <div class="col-md-6 mb-3">
+            <label asp-for="FechaSalida" class="form-label fw-bold">Fecha de Salida *</label>
+            <input asp-for="FechaSalida" type="date" class="form-control" required 
+                   min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" 
+                   value="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" />
+            <span asp-validation-for="FechaSalida" class="text-danger"></span>
         </div>
-    </form>
-</div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-save"></i> Guardar Reserva
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Listado
+            </a>
+        </div>
+    </div>
+</form>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
     <script>
-        $(document).ready(function() {
-            $.validator.addMethod("fechaMinima", function(value, element) {
-                if (!value) return true; // Skip validation if empty
-                var fecha = new Date(value);
-                var hoy = new Date();
-                hoy.setHours(0,0,0,0);
-                return fecha >= hoy;
-            }, "La fecha no puede ser anterior a hoy");
-
-            $.validator.addMethod("fechaSalidaValida", function(value, element) {
-                if (!value) return true; // Skip validation if empty
-                var fechaSalida = new Date(value);
-                var fechaEntrada = new Date($("#FechaEntrada").val());
-                return fechaSalida > fechaEntrada;
-            }, "La fecha de salida debe ser posterior a la fecha de entrada");
-
-            $("#reservaForm").validate({
-                rules: {
-                    ClienteId: {
-                        required: true
-                    },
-                    HabitacionId: {
-                        required: true
-                    },
-                    FechaEntrada: {
-                        required: true,
-                        fechaMinima: true
-                    },
-                    FechaSalida: {
-                        required: true,
-                        fechaSalidaValida: true
-                    }
-                },
-                messages: {
-                    ClienteId: {
-                        required: "Por favor, seleccione un cliente"
-                    },
-                    HabitacionId: {
-                        required: "Por favor, seleccione una habitación"
-                    },
-                    FechaEntrada: {
-                        required: "La fecha de entrada es obligatoria"
-                    },
-                    FechaSalida: {
-                        required: "La fecha de salida es obligatoria"
-                    }
-                },
-                errorElement: 'span',
-                errorClass: 'text-danger',
-                highlight: function(element) {
-                    $(element).addClass('is-invalid');
-                },
-                unhighlight: function(element) {
-                    $(element).removeClass('is-invalid');
-                }
-            });
-
+        $(document).ready(function () {
             // Actualizar fecha mínima de salida cuando cambie la fecha de entrada
             $("#FechaEntrada").change(function() {
                 var fechaEntrada = $(this).val();
                 var fechaSalida = $("#FechaSalida");
-                fechaSalida.attr("min", fechaEntrada);
                 
+                // La fecha de salida debe ser, como mínimo, el día siguiente a la de entrada.
+                var nuevaFechaMinima = new Date(fechaEntrada);
+                nuevaFechaMinima.setDate(nuevaFechaMinima.getDate() + 1);
+                var minAttr = nuevaFechaMinima.toISOString().split('T')[0];
+                fechaSalida.attr("min", minAttr);
+
                 // Si la fecha de salida es menor que la nueva fecha de entrada, actualizarla
-                if (new Date(fechaSalida.val()) <= new Date(fechaEntrada)) {
+                if (fechaSalida.val() <= fechaEntrada) {
                     var nuevaFechaSalida = new Date(fechaEntrada);
                     nuevaFechaSalida.setDate(nuevaFechaSalida.getDate() + 1);
                     fechaSalida.val(nuevaFechaSalida.toISOString().split('T')[0]);
                 }
-            });
             });
         });
     </script>
