@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Registrar Pago";
     var reserva = ViewData["Reserva"] as Reserva;
-    var reservas = ViewData["Reservas"] as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -28,12 +27,8 @@
                 {
                     <div class="form-group mb-3">
                         <label asp-for="ReservaId" class="form-label">Reserva <span class="text-danger">*</span></label>
-                        <select asp-for="ReservaId" class="form-select" required onchange="cargarDetallesReserva(this.value)">
+                        <select asp-for="ReservaId" class="form-select" asp-items="@(ViewData["Reservas"] as SelectList)" required onchange="cargarDetallesReserva(this.value)">
                             <option value="">Seleccione una reserva...</option>
-                            @foreach (var r in reservas)
-                            {
-                                <option value="@r.ReservaId">@r.Descripcion</option>
-                            }
                         </select>
                         <span asp-validation-for="ReservaId" class="text-danger"></span>
                     </div>

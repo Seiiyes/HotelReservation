@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using HotelReservations.Models;
 using Microsoft.AspNetCore.Authorization;
 
@@ -41,15 +42,13 @@ namespace HotelReservations.Controllers
                 ViewData["Reserva"] = reserva;
                 return View(new ServicioAdicional { 
                     ReservaId = reserva.ReservaId,
-                    Nombre = string.Empty,
-                    EstadoPago = "Pendiente",
-                    Reserva = reserva
+                    EstadoPago = "Pendiente"
                 });
             }
 
             await CargarReservasAsync();
 
-            return View();
+            return View(new ServicioAdicional { EstadoPago = "Pendiente" });
         }
 
         // POST: ServiciosAdicionales/Create
@@ -75,9 +74,25 @@ namespace HotelReservations.Controllers
                 }
             }
 
-            await CargarReservasAsync();
+            // Si la validación falla o hay un error, debemos recargar los datos para la vista.
+            // Es crucial mantener el contexto de si se estaba creando para una reserva específica.
+            if (servicioAdicional.ReservaId > 0)
+            {
+                // Si teníamos una reserva, la recargamos para mostrar sus detalles y no el dropdown.
+                var reserva = await _context.Reservas
+                    .Include(r => r.Cliente)
+                    .Include(r => r.Habitacion)
+                    .FirstOrDefaultAsync(r => r.ReservaId == servicioAdicional.ReservaId);
+                ViewData["Reserva"] = reserva;
+            }
+            else
+            {
+                // Si no había reserva, cargamos la lista desplegable.
+                await CargarReservasAsync();
+            }
 
             return View(servicioAdicional);
+
         }
 
         // GET: ServiciosAdicionales/Edit/5
@@ -135,7 +150,19 @@ namespace HotelReservations.Controllers
                 }
             }
 
-            await CargarReservasAsync();
+            // Si la validación falla, es necesario recargar los datos de la reserva para la vista.
+            var reservaParaVista = await _context.Reservas
+                .Include(r => r.Cliente)
+                .Include(r => r.Habitacion)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.ReservaId == servicioAdicional.ReservaId);
+            ViewData["Reserva"] = reservaParaVista;
+
+            if (reservaParaVista == null)
+            {
+                ModelState.AddModelError("", "No se pudo encontrar la reserva asociada a este servicio.");
+            }
+
             return View(servicioAdicional);
         }
 
@@ -204,16 +231,18 @@ namespace HotelReservations.Controllers
         #region Private Helpers
         private async Task CargarReservasAsync()
         {
-            ViewData["Reservas"] = await _context.Reservas
+            var items = await _context.Reservas
                 .Include(r => r.Cliente)
                 .Include(r => r.Habitacion)
                 .Where(r => r.Cliente != null && r.Habitacion != null)
+                .OrderBy(r => r.ReservaId)
                 .Select(r => new
                 {
                     r.ReservaId,
                     Descripcion = $"Reserva #{r.ReservaId} - {r.Cliente!.Nombre} {r.Cliente.Apellido} - {r.Habitacion!.Tipo}"
                 })
                 .ToListAsync();
+            ViewData["Reservas"] = new SelectList(items, "ReservaId", "Descripcion");
         }
         #endregion
     }

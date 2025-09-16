@@ -61,8 +61,8 @@ namespace HotelReservations.Controllers
         public async Task<IActionResult> Index()
         {
             return View(await _context.Pagos
-                .Include(p => p.Reserva)
-                .ThenInclude(r => r.Cliente)
+                .Include(p => p.Reserva.Cliente) // Carga el Cliente a través de la Reserva
+                .Include(p => p.Reserva.Habitacion)
                 .ToListAsync());
         }
 
@@ -113,7 +113,7 @@ namespace HotelReservations.Controllers
 
             // Si no se especifica reserva, cargar el dropdown
             await CargarReservasPendientesAsync();
-            return View();
+            return View(new Pago());
         }
 
         // POST: Pagos/Create
@@ -152,7 +152,6 @@ namespace HotelReservations.Controllers
                     try
                     {
                         pago.FechaPago = DateTime.Now;
-                        pago.Reserva = reserva!;
                         _context.Add(pago);
 
                         var serviciosAdicionales = await _context.ServiciosAdicionales
@@ -195,8 +194,8 @@ namespace HotelReservations.Controllers
             }
 
             var pago = await _context.Pagos
-                .Include("Reserva.Cliente")
-                .Include("Reserva.Habitacion")
+                .Include(p => p.Reserva.Cliente)
+                .Include(p => p.Reserva.Habitacion)
                 .FirstOrDefaultAsync(m => m.PagoId == id);
 
             if (pago == null)
@@ -319,14 +318,17 @@ namespace HotelReservations.Controllers
 
         private async Task CargarReservasPendientesAsync()
         {
-            var reservasSinPago = await _context.Reservas
+            // Se optimiza la consulta para cargar solo reservas que realmente tienen un saldo pendiente.
+            // El filtrado ahora se realiza directamente en la base de datos para mayor eficiencia.
+            var reservasPendientes = await _context.Reservas
                 .Include(r => r.Cliente)
                 .Include(r => r.Habitacion)
-                .Where(r => r.Cliente != null && r.Habitacion != null)
+                .Where(r => r.Cliente != null && r.Habitacion != null &&
+                            (r.Habitacion.Precio + r.Servicios.Sum(s => s.Precio)) > r.Pagos.Sum(p => p.Monto))
                 .OrderBy(r => r.ReservaId)
                 .ToListAsync();
 
-            var items = reservasSinPago.Select(r => new
+            var items = reservasPendientes.Select(r => new
             {
                 r.ReservaId,
                 Descripcion = $"Reserva #{r.ReservaId} - {r.Cliente!.Nombre} {r.Cliente.Apellido} - {r.Habitacion!.Tipo}"

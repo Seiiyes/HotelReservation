@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Crear Servicio Adicional";
     var reserva = ViewData["Reserva"] as Reserva;
-    var reservas = ViewData["Reservas"] as IEnumerable<dynamic>;
 }
 
 <h1>@ViewData["Title"]</h1>
@@ -17,8 +16,8 @@
             {
                 <div class="alert alert-info">
                     <h5>Detalles de la Reserva:</h5>
-                    <p>Cliente: @reserva.Cliente.Nombre @reserva.Cliente.Apellido</p>
-                    <p>Habitación: @reserva.Habitacion.Tipo</p>
+                    <p>Cliente: @reserva.Cliente?.Nombre @reserva.Cliente?.Apellido</p>
+                    <p>Habitación: @reserva.Habitacion?.Tipo</p>
                     <p>Fecha: @reserva.FechaEntrada.ToShortDateString() - @reserva.FechaSalida.ToShortDateString()</p>
                 </div>
                 <input type="hidden" asp-for="ReservaId" value="@reserva.ReservaId" />
@@ -27,12 +26,8 @@
             {
                 <div class="form-group mb-3">
                     <label asp-for="ReservaId" class="control-label">Reserva</label>
-                    <select asp-for="ReservaId" class="form-select" required>
+                    <select asp-for="ReservaId" class="form-select" asp-items="@(ViewData["Reservas"] as SelectList)" required>
                         <option value="">Seleccione una reserva...</option>
-                        @foreach (var r in reservas)
-                        {
-                            <option value="@r.ReservaId">@r.Descripcion</option>
-                        }
                     </select>
                     <span asp-validation-for="ReservaId" class="text-danger"></span>
                 </div>

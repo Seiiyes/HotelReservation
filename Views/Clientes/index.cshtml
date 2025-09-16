@@ -1,7 +1,7 @@
 @model IEnumerable<Cliente>
 
 @{
-    ViewData[index: "Title"] = "Lista de Clientes";
+    ViewData["Title"] = "Lista de Clientes";
 }
 
 <h2 class="mb-3">Clientes</h2>
@@ -35,7 +35,9 @@
                 <td>
                     <a asp-action="Edit" asp-route-id="@item.ClienteId" class="btn btn-sm btn-warning">Editar</a>
                     <a asp-action="Details" asp-route-id="@item.ClienteId" class="btn btn-sm btn-info">Detalles</a>
-                    <a asp-action="Delete" asp-route-id="@item.ClienteId" class="btn btn-sm btn-danger">Eliminar</a>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmarEliminacion('@item.ClienteId')">
+                        Eliminar
+                    </button>
                 </td>
             </tr>
         }
@@ -48,3 +50,32 @@
     }
     </tbody>
 </table>
+
+<!-- Formulario oculto para la eliminación -->
+<form id="deleteForm" asp-action="Delete" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmarEliminacion(clienteId) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "No podrás revertir esta acción. Se eliminará el cliente y podría afectar a las reservas asociadas.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, ¡eliminar!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.getElementById('deleteForm');
+                    form.action = `/Clientes/Delete/${clienteId}`;
+                    form.submit();
+                }
+            });
+        }
+    </script>
+}

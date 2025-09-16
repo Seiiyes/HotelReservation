@@ -8,7 +8,6 @@ body.auth-layout {
     min-height: 100vh;
     padding-top: 40px;
     padding-bottom: 40px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 /* Contenedor para los formularios de login, registro, etc. */
@@ -16,15 +15,20 @@ body.auth-layout {
     width: 100%;
     max-width: 450px;
     padding: 2.5rem;
-    background-color: #ffffff;
-    border-radius: 0.5rem;
-    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
-    border: 1px solid #dee2e6;
+    /* Añadimos márgenes automáticos para centrar el contenedor horizontalmente */
+    margin-right: auto;
+    margin-left: auto;
+    border-radius: var(--bs-border-radius-lg); /* Usamos una variable global de Bootstrap */
 }
 
 .auth-header {
+    /* Convertimos el enlace en un bloque para que ocupe todo el ancho
+       y el centrado de texto funcione correctamente. */
+    display: block;
     text-align: center;
     margin-bottom: 1.5rem;
     font-weight: 600;
-    font-size: 1.75rem;
+    font-size: 2rem;
+    color: var(--bs-primary-text-emphasis);
+    text-decoration: none;
 }

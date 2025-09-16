@@ -1,19 +1,24 @@
 using HotelReservations.Models; // Asegúrate de que la ruta a tu DbContext es correcta
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Se obtiene la cadena de conexión. Es importante validar que no sea nula o vacía.
 var connectionString = builder.Configuration.GetConnectionString("HotelDBConnection");
-
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("ERROR: La cadena de conexión 'HotelDBConnection' no se pudo encontrar en appsettings.json. Verifica que el nombre sea correcto y que las propiedades del archivo estén en 'Copy if newer'.");
+    // Lanzar una excepción si no se encuentra la cadena de conexión es una buena práctica
+    // para fallar rápido y evitar errores inesperados más adelante.
+    throw new InvalidOperationException("La cadena de conexión 'HotelDBConnection' no se encontró en la configuración.");
 }
 
-
 builder.Services.AddDbContext<HotelDbContext>(options =>
-    options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 33))));
+    // Usar AutoDetect para la versión del servidor MySQL hace que la aplicación sea más portable
+    // y no depende de una versión específica hardcodeada.
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 // 1. Añadir los servicios de Identity
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
@@ -27,6 +32,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
         options.Password.RequireUppercase = true;       // Requerir al menos una mayúscula
         options.Password.RequireLowercase = true;       // Requerir al menos una minúscula
     })
+    .AddRoles<IdentityRole>() // <-- Añadir esta línea para habilitar la gestión de roles
     .AddEntityFrameworkStores<HotelDbContext>();
 
 // 2. Añadir soporte para Razor Pages (necesario para las vistas de Identity)

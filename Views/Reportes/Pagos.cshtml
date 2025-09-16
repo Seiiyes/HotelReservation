@@ -1,0 +1,115 @@
+@model HotelReservations.Models.ReportePagosViewModel
+@{
+    ViewData["Title"] = "Reporte de Pagos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 mb-0">@ViewData["Title"]</h1>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-search"></i> Criterios de Búsqueda
+    </div>
+    <div class="card-body">
+        <form asp-action="Pagos" method="post">
+            @Html.AntiForgeryToken()
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label asp-for="FechaInicio" class="form-label"></label>
+                    <input asp-for="FechaInicio" class="form-control" type="date" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="FechaFin" class="form-label"></label>
+                    <input asp-for="FechaFin" class="form-control" type="date" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="MetodoPago" class="form-label"></label>
+                    <select asp-for="MetodoPago" asp-items="Model.MetodosDePago" class="form-select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel-fill"></i> Filtrar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.Resultados != null)
+{
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-table"></i> Resultados (@Model.Resultados.Count)</span>
+            @if (Model.Resultados.Any())
+            {
+                <div>
+                    <a asp-action="ExportarPagosExcel"
+                       asp-route-fechaInicio="@Model.FechaInicio?.ToString("yyyy-MM-dd")"
+                       asp-route-fechaFin="@Model.FechaFin?.ToString("yyyy-MM-dd")"
+                       asp-route-metodoPago="@Model.MetodoPago"
+                       class="btn btn-sm btn-success">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+                    </a>
+                    <a asp-action="ExportarPagosPDF"
+                       asp-route-fechaInicio="@Model.FechaInicio?.ToString("yyyy-MM-dd")"
+                       asp-route-fechaFin="@Model.FechaFin?.ToString("yyyy-MM-dd")"
+                       asp-route-metodoPago="@Model.MetodoPago"
+                       class="btn btn-sm btn-danger">
+                        <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
+                    </a>
+                </div>
+            }
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fecha de Pago</th>
+                            <th>Cliente</th>
+                            <th>Reserva #</th>
+                            <th>Método de Pago</th>
+                            <th class="text-end">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Resultados.Any())
+                        {
+                            @foreach (var item in Model.Resultados)
+                            {
+                                <tr>
+                                    <td>@item.FechaPago.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@(item.Reserva?.Cliente?.Nombre) @(item.Reserva?.Cliente?.Apellido)</td>
+                                    <td>@item.ReservaId</td>
+                                    <td>@item.MetodoPago</td>
+                                    <td class="text-end">@item.Monto.ToString("C0")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    No se encontraron pagos con los criterios seleccionados.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if (Model.Resultados.Any())
+                    {
+                        <tfoot>
+                            <tr class="fw-bold table-group-divider">
+                                <td colspan="4" class="text-end fs-5">Total:</td>
+                                <td class="text-end fs-5">@Model.TotalRecaudado.ToString("C0")</td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+}
